@@ -8,4 +8,6 @@ It does everything the VM Translator should.
 
 build with 
 
-`make release`
+```
+make release
+```
