@@ -1,3 +1,0 @@
-push constant 20
-push local 2
-add
