@@ -1,6 +1,6 @@
 CC=/usr/bin/gcc
 WCC=/usr/bin/x86_64-w64-mingw32-gcc
-SRC=main.c
+SRC=main.c write.c
 DEVFLAGS=-Wall -Wextra -Wpedantic -g
 RELEASEFLAGS=-Wall -Wextra -Wpedantic -O3 -static -flto
 

@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+#include "write.h"
 #define VMMAX 10000
 #define HACKMAX 40000
 
@@ -56,283 +57,50 @@ void codewriter_write(Command *vmcommands, int *commandSize, FILE *f, char *fnam
 
     int label = 0;
     int i = 0;
+    static int callid = 0;
     while (i < *commandSize) {
 	if (strcmp(vmcommands[i].cmd, "push") == 0) {
-	    if (strcmp(vmcommands[i].arg1, "constant") == 0) {
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s\n", vmcommands[i].arg2);
-		fprintf(f, "D=A\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "A=M\n");
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "M=M+1\n");
-	    } else if (strcmp(vmcommands[i].arg1, "local") == 0) {
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s\n", vmcommands[i].arg2);
-		fprintf(f, "D=A\n");
-		fprintf(f, "@LCL\n");
-		fprintf(f, "A=D+M\n");
-		fprintf(f, "D=M\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "A=M\n");
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "M=M+1\n");
-	    } else if (strcmp(vmcommands[i].arg1, "static") == 0) {
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s.%s\n", fname, vmcommands[i].arg2);
-		fprintf(f, "D=M\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "A=M\n");
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "M=M+1\n");
-	    } else if (strcmp(vmcommands[i].arg1, "this") == 0) {
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s\n", vmcommands[i].arg2);
-		fprintf(f, "D=A\n");
-		fprintf(f, "@THIS\n");
-		fprintf(f, "A=D+M\n");
-		fprintf(f, "D=M\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "A=M\n");
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "M=M+1\n");
-	    } else if (strcmp(vmcommands[i].arg1, "that") == 0) { 
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s\n", vmcommands[i].arg2);
-		fprintf(f, "D=A\n");
-		fprintf(f, "@THAT\n");
-		fprintf(f, "A=D+M\n");
-		fprintf(f, "D=M\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "A=M\n");
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "M=M+1\n");
-	    } else if (strcmp(vmcommands[i].arg1, "pointer") == 0) { 
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s\n", vmcommands[i].arg2);
-		fprintf(f, "D=A\n");
-		fprintf(f, "@3\n");
-		fprintf(f, "A=D+A\n");
-		fprintf(f, "D=M\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "A=M\n");
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "M=M+1\n");
-	    } else if (strcmp(vmcommands[i].arg1, "temp") == 0) {
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s\n", vmcommands[i].arg2);
-		fprintf(f, "D=A\n");
-		fprintf(f, "@5\n");
-		fprintf(f, "A=D+A\n");
-		fprintf(f, "D=M\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "A=M\n");
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "M=M+1\n");
-	    } else if (strcmp(vmcommands[i].arg1, "argument") == 0) {
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s\n", vmcommands[i].arg2);
-		fprintf(f, "D=A\n");
-		fprintf(f, "@ARG\n");
-		fprintf(f, "A=D+M\n");
-		fprintf(f, "D=M\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "A=M\n");
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "M=M+1\n");
-	    }
+	    writePush(vmcommands[i].arg1, vmcommands[i].arg2, f, fname);
 	} else if (strcmp(vmcommands[i].cmd, "pop") == 0) {
-	    if (strcmp(vmcommands[i].arg1, "local") == 0) {
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s\n", vmcommands[i].arg2);
-		fprintf(f, "D=A\n");
-		fprintf(f, "@LCL\n");
-		fprintf(f, "D=D+M\n");
-		fprintf(f, "@R14\n"); //essentially we use R14 as a pseudo D register
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "AM=M-1\n"); //move the stack pointer down 1 and put the value there into D
-		fprintf(f, "D=M\n");
-		fprintf(f, "@R14\n");
-		fprintf(f, "A=M\n"); //earlier we stored the address of the local register in R14
-		fprintf(f, "M=D\n"); //set that address (in local) to the value we got off the stack
-	    } else if (strcmp(vmcommands[i].arg1, "static") == 0) {
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@SP\n");
-		fprintf(f, "AM=M-1\n");
-		fprintf(f, "D=M\n");
-		fprintf(f, "@%s.%s\n", fname, vmcommands[i].arg2);
-		fprintf(f, "M=D\n");
-	    } else if (strcmp(vmcommands[i].arg1, "this") == 0) {
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s\n", vmcommands[i].arg2);
-		fprintf(f, "D=A\n");
-		fprintf(f, "@THIS\n");
-		fprintf(f, "D=D+M\n");
-		fprintf(f, "@R14\n"); //essentially we use R14 as a pseudo D register
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "AM=M-1\n"); //move the stack pointer down 1 and put the value there into D
-		fprintf(f, "D=M\n");
-		fprintf(f, "@R14\n");
-		fprintf(f, "A=M\n"); //earlier we stored the address of the local register in R14
-		fprintf(f, "M=D\n"); //set that address (in local) to the value we got off the stack
-	    } else if (strcmp(vmcommands[i].arg1, "that") == 0) { 
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s\n", vmcommands[i].arg2);
-		fprintf(f, "D=A\n");
-		fprintf(f, "@THAT\n");
-		fprintf(f, "D=D+M\n");
-		fprintf(f, "@R14\n"); //essentially we use R14 as a pseudo D register
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "AM=M-1\n"); //move the stack pointer down 1 and put the value there into D
-		fprintf(f, "D=M\n");
-		fprintf(f, "@R14\n");
-		fprintf(f, "A=M\n"); //earlier we stored the address of the local register in R14
-		fprintf(f, "M=D\n"); //set that address (in local) to the value we got off the stack
-	    } else if (strcmp(vmcommands[i].arg1, "pointer") == 0) {
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s\n", vmcommands[i].arg2);
-		fprintf(f, "D=A\n");
-		fprintf(f, "@3\n");
-		fprintf(f, "D=D+A\n");
-		fprintf(f, "@R14\n"); //essentially we use R14 as a pseudo D register
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "AM=M-1\n"); //move the stack pointer down 1 and put the value there into D
-		fprintf(f, "D=M\n");
-		fprintf(f, "@R14\n");
-		fprintf(f, "A=M\n"); //earlier we stored the address of the local register in R14
-		fprintf(f, "M=D\n"); //set that address (in local) to the value we got off the stack
-	    } else if (strcmp(vmcommands[i].arg1, "temp") == 0) {
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s\n", vmcommands[i].arg2);
-		fprintf(f, "D=A\n");
-		fprintf(f, "@5\n");
-		fprintf(f, "D=D+A\n");
-		fprintf(f, "@R14\n"); //essentially we use R14 as a pseudo D register
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "AM=M-1\n"); //move the stack pointer down 1 and put the value there into D
-		fprintf(f, "D=M\n");
-		fprintf(f, "@R14\n");
-		fprintf(f, "A=M\n"); //earlier we stored the address of the local register in R14
-		fprintf(f, "M=D\n"); //set that address (in local) to the value we got off the stack
-	    } else if (strcmp(vmcommands[i].arg1, "argument") == 0) {
-	    	fprintf(f, "// %s %s %s\n", vmcommands[i].cmd, vmcommands[i].arg1, vmcommands[i].arg2);
-		fprintf(f, "@%s\n", vmcommands[i].arg2);
-		fprintf(f, "D=A\n");
-		fprintf(f, "@ARG\n");
-		fprintf(f, "D=D+M\n");
-		fprintf(f, "@R14\n"); //essentially we use R14 as a pseudo D register
-		fprintf(f, "M=D\n");
-		fprintf(f, "@SP\n");
-		fprintf(f, "AM=M-1\n"); //move the stack pointer down 1 and put the value there into D
-		fprintf(f, "D=M\n");
-		fprintf(f, "@R14\n");
-		fprintf(f, "A=M\n"); //earlier we stored the address of the local register in R14
-		fprintf(f, "M=D\n"); //set that address (in local) to the value we got off the stack
-	    }
-	} else if (strcmp(vmcommands[i].cmd, "add") == 0) {
-	    fprintf(f, "// %s\n", vmcommands[i].cmd);
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "AM=M-1\n");
-	    fprintf(f, "D=M\n");
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "A=M-1\n");
-	    fprintf(f, "M=D+M\n");
+	    writePop(vmcommands[i].arg1, vmcommands[i].arg2, f, fname);
+    	} else if (strcmp(vmcommands[i].cmd, "add") == 0) {
+	    writeAdd(f);
 	} else if (strcmp(vmcommands[i].cmd, "sub") == 0) {
-	    fprintf(f, "// %s\n", vmcommands[i].cmd);
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "AM=M-1\n");
-	    fprintf(f, "D=M\n");
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "A=M-1\n");
-	    fprintf(f, "M=M-D\n");
+	    writeSub(f);
 	} else if (strcmp(vmcommands[i].cmd, "neg") == 0) {
-	    fprintf(f, "// %s\n", vmcommands[i].cmd);
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "A=M-1\n");
-	    fprintf(f, "M=-M\n");
+	    writeNeg(f);
 	} else if (strcmp(vmcommands[i].cmd, "eq") == 0) {
-	    fprintf(f, "// %s\n", vmcommands[i].cmd);
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "AM=M-1\n");
-	    fprintf(f, "D=M\n");
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "A=M-1\n");
-	    fprintf(f, "D=D-M\n");
-	    fprintf(f, "M=-1\n");
-	    fprintf(f, "@trueeq%d\n", label);
-	    fprintf(f, "D;JEQ\n");
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "A=M-1\n");
-	    fprintf(f, "M=0\n");
-	    fprintf(f, "(trueeq%d)\n", label);
+	    writeEq(label, f);
 	    label++;
 	} else if (strcmp(vmcommands[i].cmd, "gt") == 0) {
-	    fprintf(f, "// %s\n", vmcommands[i].cmd);
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "AM=M-1\n");
-	    fprintf(f, "D=M\n");
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "A=M-1\n");
-	    fprintf(f, "D=M-D\n");
-	    fprintf(f, "M=-1\n");
-	    fprintf(f, "@truegt%d\n", label);
-	    fprintf(f, "D;JGT\n");
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "A=M-1\n");
-	    fprintf(f, "M=0\n");
-	    fprintf(f, "(truegt%d)\n", label);
+	    writeGt(label, f);
 	    label++;
 	} else if (strcmp(vmcommands[i].cmd, "lt") == 0) {
-	    fprintf(f, "// %s\n", vmcommands[i].cmd);
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "AM=M-1\n");
-	    fprintf(f, "D=M\n");
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "A=M-1\n");
-	    fprintf(f, "D=M-D\n");
-	    fprintf(f, "M=-1\n");
-	    fprintf(f, "@truelt%d\n", label);
-	    fprintf(f, "D;JLT\n");
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "A=M-1\n");
-	    fprintf(f, "M=0\n");
-	    fprintf(f, "(truelt%d)\n", label);
+	    writeLt(label, f);
 	    label++;
 	} else if (strcmp(vmcommands[i].cmd, "and") == 0) {
-	    fprintf(f, "// %s\n", vmcommands[i].cmd);
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "AM=M-1\n");
-	    fprintf(f, "D=M\n");
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "A=M-1\n");
-	    fprintf(f, "M=D&M\n");
+	    writeAnd(f);
 	} else if (strcmp(vmcommands[i].cmd, "or") == 0) {
-	    fprintf(f, "// %s\n", vmcommands[i].cmd);
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "AM=M-1\n");
-	    fprintf(f, "D=M\n");
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "A=M-1\n");
-	    fprintf(f, "M=D|M\n");
+	    writeOr(f);
 	} else if (strcmp(vmcommands[i].cmd, "not") == 0) {
-	    fprintf(f, "// %s\n", vmcommands[i].cmd);
-	    fprintf(f, "@SP\n");
-	    fprintf(f, "A=M-1\n");
-	    fprintf(f, "M=!M\n");
-	} 
+	    writeNot(f);
+	} else if (strcmp(vmcommands[i].cmd, "label") == 0) {
+	    writeLabel(vmcommands[i].arg1, f);
+	} else if (strcmp(vmcommands[i].cmd, "goto") == 0) {
+	    writeGoto(vmcommands[i].arg1, f);
+	} else if (strcmp(vmcommands[i].cmd, "if-goto") == 0) {
+	    writeIfGoto(vmcommands[i].arg1, f);
+	    //now we have to implement functions which look like the hardest part
+	    //:((
+	} else if  (strcmp(vmcommands[i].cmd, "function") == 0) {
+	    writeFunction(vmcommands[i].arg1, vmcommands[i].arg2, f);
+	} else if  (strcmp(vmcommands[i].cmd, "call") == 0) {
+	    writeCall(callid, vmcommands[i].arg1, vmcommands[i].arg2, f);
+	    callid++;
+	} else if  (strcmp(vmcommands[i].cmd, "return") == 0) {
+	    writeReturn(f);
+	}
+
 	i++;
     }
 }
@@ -362,8 +130,13 @@ int main(int argc, char **argv) {
 	    return 1;
 	}
 
-	FILE **files = malloc(sizeof(FILE*)*100);
-	int numFiles = 0;
+	FILE *asmfile = fopen(asmName, "w");
+	if (asmfile == NULL) {
+	    printf("Error opening file\n");
+	    return 1;
+	}
+
+	writeInit(asmfile);
 	while ((entry = readdir(vmdir)) != NULL) {
 	    char path[4096];
 	    snprintf(path, sizeof(path), "%s/%s", baseName, entry->d_name);
@@ -374,29 +147,34 @@ int main(int argc, char **argv) {
 	    }
 
 
-	    if (S_ISREG(st.st_mode)) {
-		files[numFiles] = fopen(path, "r");
-		if (files[numFiles] == NULL) {
-		    printf("Failed to open file %s", path);
-		    return 1;
-		}
-		numFiles++;
-	    }  
-	}
+	    if (!S_ISREG(st.st_mode)) {
+		continue;
+	    }
 
-	closedir(vmdir);
+	    char *dot = strrchr(entry->d_name, '.');
+	    //checks if the file we are looking at is a ".vm" file
+	    if (!dot || strcmp(dot, ".vm") != 0) {
+		continue;
+	    }
 
-	FILE *asmfile = fopen(asmName, "w");
-	if (asmfile == NULL) {
-	    printf("Error opening file\n");
-	    return 1;
-	}
+	    FILE *vmfile = fopen(path, "r");
+	    if (!vmfile) {
+		continue;
+	    }
 
-	for (int i = 0; i < numFiles; i++) {
-	    int* numcommands = malloc(sizeof(int));
-	    Command *cmdlist = parser_read_file(*(files + i), numcommands);
+	    char *vmfilename = strdup(entry->d_name);
+	    char *ext = strrchr(vmfilename, '.');
+	    if (ext) {
+		*ext = '\0';
+	    }
 
-	    codewriter_write(cmdlist, numcommands, asmfile, baseName);
+	    int *numcommands = malloc(sizeof(int));
+	    Command *cmdlist = parser_read_file(vmfile, numcommands);
+
+	    codewriter_write(cmdlist, numcommands, asmfile, vmfilename);
+
+	    free(vmfilename);
+
 	    for (int j = 0; j < *numcommands; j++) {
 		free(cmdlist[j].cmd);
 		free(cmdlist[j].arg1);
@@ -404,10 +182,10 @@ int main(int argc, char **argv) {
 	    }
 	    free(cmdlist);
 	    free(numcommands);
-	    fclose(files[i]);
+	    fclose(vmfile);
 	}
-	fclose(asmfile);
-	free(files);
+
+
     } else if (strcmp(ext, "vm") == 0) {
 	FILE *vmfile = fopen(argv[1], "r");
 
@@ -426,6 +204,7 @@ int main(int argc, char **argv) {
 	    return 1;
 	}
 
+	writeInit(asmfile);
 	codewriter_write(commandlist, numcommands, asmfile, baseName);
 	fclose(asmfile);
 
